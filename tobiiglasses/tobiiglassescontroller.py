@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
-import urllib2
+import urllib.request
 import json
 import time
 import datetime
@@ -52,13 +52,11 @@ class TobiiGlassesController():
 		self.KA_DATA_MSG = "{\"type\": \"live.data.unicast\", \"key\": \""+ str(uuid.uuid4()) +"\", \"op\": \"start\"}"
 
 		if self.address is None:
-			addr = self.__discover_device__()
-			if addr is None:
+			self.address = self.__discover_device__()
+			if self.address is None:
 				quit()
-			else:
-				self.address = self.__discover_device__()
-		else:
-			self.__set_address__(self.udpport, self.address)
+
+		self.__set_address__(self.udpport, self.address)
 
 		self.__connect__()
 
@@ -89,13 +87,14 @@ class TobiiGlassesController():
 			iptype = socket.AF_INET6
 		res = socket.getaddrinfo(self.peer[0], self.peer[1], socket.AF_UNSPEC, socket.SOCK_DGRAM, 0, socket.AI_PASSIVE)
 		sock = socket.socket(res[0][0], res[0][1], res[0][2])
+
 		return sock
 
 
 	def __send_keepalive_msg__(self, socket, msg):
 
 		while self.streaming:
-			socket.sendto(msg, self.peer)
+			socket.sendto(msg.encode(), self.peer)
 			time.sleep(self.timeout)
 
 
@@ -104,7 +103,7 @@ class TobiiGlassesController():
 		time.sleep(1)
 		while self.streaming:
 			data, address = socket.recvfrom(1024)
-			jdata = json.loads(data)
+			jdata = json.loads(data.decode())
 			self.__refresh_data__(jdata)
 
 
@@ -187,10 +186,10 @@ class TobiiGlassesController():
 	def __post_request__(self, api_action, data=None):
 
 		url = self.base_url + api_action
-		req = urllib2.Request(url)
+		req = urllib.Request(url)
 		req.add_header('Content-Type', 'application/json')
 		data = json.dumps(data)
-		response = urllib2.urlopen(req, data)
+		response = urllib.urlopen(req, data)
 		data = response.read()
 		json_data = json.loads(data)
 		return json_data
@@ -198,7 +197,7 @@ class TobiiGlassesController():
 	def __get_request__(self, api_action):
 
 		url = self.base_url + api_action
-		res = urllib2.urlopen(url)
+		res = urllib.urlopen(url)
 		data = json.load(res)
 		return data
 
@@ -213,14 +212,13 @@ class TobiiGlassesController():
 			s6 = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 			s6.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			s6.bind(('::', PORT))
-			s6.sendto('{"type":"discover"}', (MULTICAST_ADDR, 13006))
+			s6.sendto('{"type":"discover"}'.encode(), (MULTICAST_ADDR, 13006))
 			log.debug("Discover request sent to " + MULTICAST_ADDR)
 			log.debug("Waiting response from a device ...")
 			data, address = s6.recvfrom(1024)
-			log.debug("From: " + address[0] + " " + data)
+			log.debug("From: " + address[0] + " " + str(data))
 			log.debug("Tobii Pro Glasses found with address: [%s]" % address[0])
 			return address[0]
-
 		except:
 			log.error("Device non reachable or address not valid")
 			return None
@@ -290,11 +288,11 @@ class TobiiGlassesController():
 		url = self.base_url + api_action
 		running = True
 		while running:
-			req = urllib2.Request(url)
+			req = urllib.request.Request(url)
 			req.add_header('Content-Type', 'application/json')
-			response = urllib2.urlopen(req, None)
+			response = urllib.request.urlopen(req)
 			data = response.read()
-			json_data = json.loads(data)
+			json_data = json.loads(data.decode())
 			if json_data[key] in values:
 				running = False
 			time.sleep(1)
