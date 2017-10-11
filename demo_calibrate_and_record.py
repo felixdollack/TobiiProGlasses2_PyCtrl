@@ -25,14 +25,14 @@ def main():
 
 	tobiiglasses = TobiiGlassesController()
 
-	project_name = raw_input("Please insert the project's name: ")
+	project_name = input("Please insert the project's name: ")
 	project_id = tobiiglasses.create_project(project_name)
 
-	participant_name = raw_input("Please insert the participant's name: ")
+	participant_name = input("Please insert the participant's name: ")
 	participant_id = tobiiglasses.create_participant(project_id, participant_name)
 
 	calibration_id = tobiiglasses.create_calibration(project_id, participant_id)
-	raw_input("Put the calibration marker in front of the user, then press enter to calibrate")
+	input("Put the calibration marker in front of the user, then press enter to calibrate")
 	tobiiglasses.start_calibration(calibration_id)
 
 	res = tobiiglasses.wait_until_is_calibrated(calibration_id)
@@ -42,9 +42,9 @@ def main():
 		exit(1)
 
 	recording_id = tobiiglasses.create_recording(participant_id)
-	raw_input("Press enter to start recording")
+	input("Press enter to start recording")
 	tobiiglasses.start_recording(recording_id)
-	raw_input("Press enter to stop recording")
+	input("Press enter to stop recording")
 	tobiiglasses.stop_recording(recording_id)
 	res = tobiiglasses.wait_until_recording_is_done(recording_id)
 

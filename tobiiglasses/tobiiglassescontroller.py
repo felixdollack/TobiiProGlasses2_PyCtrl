@@ -22,6 +22,7 @@ import datetime
 import threading
 import socket
 import uuid
+import codecs
 import logging as log
 
 log.basicConfig(format='[%(levelname)s]: %(message)s', level=log.DEBUG)
@@ -35,6 +36,7 @@ class TobiiGlassesController():
 		self.streaming = False
 		self.udpport = udpport
 		self.address = address
+		self.reader = codecs.getreader("utf-8")
 
 		self.data = {}
 		nd = {'ts': -1}
@@ -186,19 +188,19 @@ class TobiiGlassesController():
 	def __post_request__(self, api_action, data=None):
 
 		url = self.base_url + api_action
-		req = urllib.Request(url)
+		req = urllib.request.Request(url)
 		req.add_header('Content-Type', 'application/json')
 		data = json.dumps(data)
-		response = urllib.urlopen(req, data)
+		response = urllib.request.urlopen(req, data.encode())
 		data = response.read()
-		json_data = json.loads(data)
+		json_data = json.loads(data.decode())
 		return json_data
 
 	def __get_request__(self, api_action):
 
 		url = self.base_url + api_action
-		res = urllib.urlopen(url)
-		data = json.load(res)
+		res = urllib.request.urlopen(url)
+		data = json.load(self.reader(res))
 		return data
 
 
@@ -347,7 +349,7 @@ class TobiiGlassesController():
 		project_id = self.get_project_id(projectname)
 
 		if project_id is None:
-			data = {'pr_info' : {'CreationDate': self.project_creation_date, 'EagleId':  str(uuid.uuid5(uuid.NAMESPACE_DNS, projectname.encode('utf-8'))), 'Name': projectname}}
+			data = {'pr_info' : {'CreationDate': self.project_creation_date, 'EagleId':  str(uuid.uuid5(uuid.NAMESPACE_DNS, projectname)), 'Name': projectname}}
 			json_data = self.__post_request__('/api/projects', data)
 			log.debug("Project %s created!" % json_data['pr_id'])
 			return json_data['pr_id']
@@ -362,7 +364,7 @@ class TobiiGlassesController():
 		self.participant_name = participant_name
 
 		if participant_id is None:
-			data = {'pa_project': project_id, 'pa_info': {'EagleId': str(uuid.uuid5(uuid.NAMESPACE_DNS, self.participant_name.encode('utf-8'))), 'Name': self.participant_name, 'Notes': participant_notes}}
+			data = {'pa_project': project_id, 'pa_info': {'EagleId': str(uuid.uuid5(uuid.NAMESPACE_DNS, self.participant_name)), 'Name': self.participant_name, 'Notes': participant_notes}}
 			json_data = self.__post_request__('/api/participants', data)
 			log.debug("Participant " + json_data['pa_id'] + " created! Project " + project_id)
 			return json_data['pa_id']
@@ -386,7 +388,7 @@ class TobiiGlassesController():
 
 		self.recn = self.recn + 1
 		recording_name = "Recording" + str(self.recn)
-		data = {'rec_participant': participant_id, 'rec_info': {'EagleId': str(uuid.uuid5(uuid.NAMESPACE_DNS, self.participant_name.encode('utf-8'))), 'Name': recording_name, 'Notes': recording_notes}}
+		data = {'rec_participant': participant_id, 'rec_info': {'EagleId': str(uuid.uuid5(uuid.NAMESPACE_DNS, self.participant_name)), 'Name': recording_name, 'Notes': recording_notes}}
 		json_data = self.__post_request__('/api/recordings', data)
 		return json_data['rec_id']
 
